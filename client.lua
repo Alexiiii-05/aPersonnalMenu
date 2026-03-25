@@ -401,78 +401,74 @@ function OpenPersonnalMenu()
                         })
                     end)
 
-                    RageUI.IsVisible(RMenu:Get('personnalmenu', 'inventory'), function()
-    local playerData = PlayerData or {}
+RageUI.IsVisible(RMenu:Get('personnalmenu', 'inventory'), function()
+    local playerData = ESX.GetPlayerData()
     local inventory = playerData.inventory or {}
 
+    -- Accès aux armes
     RageUI.Button("Armes", nil, {RightLabel = AnimatedArrow().."→→"}, true, {}, RMenu:Get('personnalmenu', 'weapons'))
 
+    -- Poids
     RageUI.Separator("📦 Poids : ~b~" .. (playerData.weight or 0) .. " / " .. (playerData.maxWeight or 0) .. " kg")
 
-    for k,v in pairs(inventory) do
+    -- Items
+    for _, v in pairs(inventory) do
         if v and v.count and v.count > 0 then
-            RageUI.Button(AnimatedArrow().."→ ~s~"..(v.label or v.name).." (x~o~"..v.count.."~s~)",nil,{RightLabel = "→→"},true,{
+            RageUI.Button(
+                AnimatedArrow().."→ ~s~"..(v.label or v.name).." (x~o~"..v.count.."~s~)",
+                nil,
+                {RightLabel = "→→"},
+                true,
+                {
                     onSelected = function()
                         SelectedItem = v
                     end
-                },RMenu:Get('personnalmenu', 'inventory_actions'))
+                },
+                RMenu:Get('personnalmenu', 'inventory_actions')
+            )
         end
     end
 end)
 
-RageUI.IsVisible(RMenu:Get('personnalmenu', 'weapons'), function()
-    local ped = PlayerPedId()
+        RageUI.IsVisible(RMenu:Get('personnalmenu', 'weapons'), function()
+            local ped = PlayerPedId()
 
-    RageUI.Separator("↓ ~r~Vos armes~s~ ↓")
+            RageUI.Separator("↓ ~r~Vos armes~s~ ↓")
 
-    local hasWeapon = false
+            local hasWeapon = false
+            local selectedWeaponHash = GetSelectedPedWeapon(ped)
 
-    for _, weapon in pairs(ESX.GetWeaponList()) do
-        local weaponHash = GetHashKey(weapon.name)
+            for _, weapon in pairs(PlayerData.loadout or {}) do
+                local weaponHash = GetHashKey(weapon.name)
 
-        if HasPedGotWeapon(ped, weaponHash, false) then
-            hasWeapon = true
-            local label = ESX.GetWeaponLabel(weapon.name) or weapon.name
-            local ammoType = GetPedAmmoTypeFromWeapon(ped, weaponHash)
+                if HasPedGotWeapon(ped, weaponHash, false) then
+                    hasWeapon = true
 
-            if ammoType == 0 then
-
-                RageUI.Button("→ "..label, "~c~Arme blanche", {RightLabel = "→→"}, true, {
-                        onSelected = function()
-                            SelectedWeapon = weapon.name
-                            RageUI.Visible(RMenu:Get('personnalmenu', 'weapon_actions'), true)
-                        end
-                    })
-
-            else
-                local selectedWeapon = GetSelectedPedWeapon(ped)
-
-                if weaponHash == selectedWeapon then
+                    local label = weapon.label or weapon.name
                     local ammo = GetAmmoInPedWeapon(ped, weaponHash)
 
-                    RageUI.Button("→ "..label.." (~b~"..ammo.." munitions~s~)", "~g~Équipée", {RightLabel = "→→"}, true, {
+                    if weaponHash == selectedWeaponHash then
+                        RageUI.Button("→ "..label.." (~b~"..ammo.." munitions~s~)", "~g~Équipée", {RightLabel = "→→"}, true, {
                             onSelected = function()
                                 SelectedWeapon = weapon.name
                                 RageUI.Visible(RMenu:Get('personnalmenu', 'weapon_actions'), true)
                             end
                         })
-
-                else
-                    RageUI.Button("→ "..label, "~c~Non équipée : munition non affichée", {RightLabel = "→→"}, true, {
+                    else
+                        RageUI.Button("→ "..label, "~c~Non équipée", {RightLabel = "→→"}, true, {
                             onSelected = function()
                                 SelectedWeapon = weapon.name
                                 RageUI.Visible(RMenu:Get('personnalmenu', 'weapon_actions'), true)
                             end
                         })
+                    end
                 end
             end
-        end
-    end
 
-    if not hasWeapon then
-        RageUI.Separator(AnimatedArrow().."Aucune arme")
-    end
-end)
+            if not hasWeapon then
+                RageUI.Separator(AnimatedArrow().."Aucune arme")
+            end
+        end)
 
         RageUI.IsVisible(RMenu:Get('personnalmenu', 'weapon_actions'), function()
 
@@ -1085,4 +1081,29 @@ RegisterNetEvent('anf:removeWeapon')
 AddEventHandler('anf:removeWeapon', function(weaponName)
     local ped = PlayerPedId()
     RemoveWeaponFromPed(ped, GetHashKey(weaponName))
+end)
+
+
+RegisterNetEvent('esx:setInventoryItem')
+AddEventHandler('esx:setInventoryItem', function(item, count)
+    local playerData = ESX.GetPlayerData()
+
+    for i = 1, #playerData.inventory do
+        if playerData.inventory[i].name == item.name then
+            playerData.inventory[i].count = count
+            break
+        end
+    end
+
+    PlayerData = playerData
+end)
+
+RegisterNetEvent('esx:addInventoryItem')
+AddEventHandler('esx:addInventoryItem', function(item, count)
+    PlayerData = ESX.GetPlayerData()
+end)
+
+RegisterNetEvent('esx:removeInventoryItem')
+AddEventHandler('esx:removeInventoryItem', function(item, count)
+    PlayerData = ESX.GetPlayerData()
 end)
