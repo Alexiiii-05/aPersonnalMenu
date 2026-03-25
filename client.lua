@@ -920,9 +920,9 @@ end)
                             if #Bills == 0 then
                                 RageUI.Separator("")RageUI.Separator(AnimatedArrow().."Aucune facture à payer")RageUI.Separator("")
                             end
+                            RageUI.Separator("Vous avez " ..#Bills.." en attente")
                             for i = 1, #Bills do
                                 local bill = Bills[i]
-                                RageUI.Separator("Vous avez " ..#Bills.." en attente")
                                 RageUI.Button(bill.label,nil,{ RightLabel = "~r~" .. ESX.Math.GroupDigits(bill.amount) .. " $" },true,{
                                         onSelected = function()
                                             ESX.TriggerServerCallback('esx_billing:payBill', function()
